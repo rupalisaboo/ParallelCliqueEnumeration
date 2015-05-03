@@ -16,7 +16,7 @@ public class Node {
 	/*
 	 * List of neighbors
 	 */
-	public ArrayList<Node> neighbors;
+	public ArrayList<String> neighbors;
 	
 	/*
 	 * Constructor
@@ -30,20 +30,21 @@ public class Node {
 	}
 	
 	/*
+	 * 
 	 * Adds a neighbor to current node
 	 */
 	public void addNeighbor(Node a, Node b) {
-		a.neighbors.add(b);
-		b.neighbors.add(a);
+		a.neighbors.add(b.nodeID);
+		b.neighbors.add(a.nodeID);
 	}
 	
 	/*
 	 * print the adjacency list of node
 	 */
 	public void printNeighbors(Node p) {
-		System.out.println(p.nodeID+" ");
-		for (Node n: p.neighbors) {
-			System.out.print(n.nodeID+" ");
+		System.out.print(p.nodeID+" ");
+		for (String n: p.neighbors) {
+			System.out.print(n +" ");
 		}
 		System.out.println();
 	}
