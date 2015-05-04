@@ -1,13 +1,21 @@
 package cliqueTreeEnumeration;
 import mpi.*;
+
 import java.util.*;
 import java.lang.*;
 import java.io.*;
 public class cliqueEnumerate {
 public static void main(String args[])
 {
-String file_name = args[0];
-Node[] nodes = null;
+	MPI.Init(args);
+	int ID = MPI.COMM_WORLD.Rank();
+	int sized = MPI.COMM_WORLD.Size();
+	int master = 0;
+	if(ID==master)
+	{
+	System.out.println("Hi from MAster <"+ID+">");
+	String file_name = args[3];
+	Node[] nodes = null;
 try {
 	File file = new File(file_name);
 	FileReader fileReader = new FileReader(file);
@@ -27,8 +35,8 @@ try {
 		{
 		if(n<size)
 		{
-			parts[1]=parts[1].replace("\"", "");
-			nodes[n] = new Node(parts[1]);
+		//	parts[1]=parts[1].replace("\"", "");
+			nodes[n] = new Node(parts[0]);
 			n++;
 		}
 		else if(!parts[0].equals("*Edges"))
@@ -42,9 +50,16 @@ try {
 } catch (IOException e) {
 	e.printStackTrace();
 }
-	for(Node i:nodes) {
-		i.printNeighbors(i);		
-	}
-}
-}
+for(Node i:nodes) {
+	i.printNeighbors(i);		
 
+	}
+	}
+	else
+	{
+		System.out.println("Hi from Slave <"+ID+">");				
+	}
+    MPI.Finalize();
+	
+}
+}
