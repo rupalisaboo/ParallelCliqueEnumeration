@@ -8,8 +8,7 @@ public static void main(String args[])
 	int ID = MPI.COMM_WORLD.Rank();
 	int numProcesses = MPI.COMM_WORLD.Size();
 	int master = 0;
-	Node[] nodes = null;
-	int size = 0;
+	
 	if(ID==master)
 	{
 		System.out.println("Hi from MAster <"+ID+">");
@@ -20,7 +19,8 @@ public static void main(String args[])
 			FileReader fileReader = new FileReader(file);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			String line;
-			
+			Node[] nodes = null;
+			int size = 0;
 			int n=0;
 			
 			while ((line = bufferedReader.readLine()) != null) {
@@ -47,6 +47,8 @@ public static void main(String args[])
 				}
 			}
 			bufferedReader.close();
+			int arr[] = {size};
+			MPI.COMM_WORLD.Bcast(arr, 0, 1, MPI.INT, 0);
 			MPI.COMM_WORLD.Bcast(nodes, 0, size, MPI.OBJECT, 0);
 		} 
 		catch (IOException e) 
@@ -57,8 +59,11 @@ public static void main(String args[])
 	}
 	else
 	{
-		MPI.COMM_WORLD.Bcast(nodes, 0, size, MPI.OBJECT, 0);
-		System.out.println("Hi from Slave <"+nodes[0].neighbors.size()+">");				
+		int arr[] = new int[1];
+		MPI.COMM_WORLD.Bcast(arr, 0, 1, MPI.INT, 0);
+		Node nodes[] = new Node[arr[0]];
+		MPI.COMM_WORLD.Bcast(nodes, 0, arr[0], MPI.OBJECT, 0);
+		System.out.println("Hi from Slave <"+nodes[0].neighbors.get(0)+">");				
 	}
     MPI.Finalize();
 	

@@ -1,13 +1,14 @@
 package cliqueTreeEnumeration;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-public class Node {
+public class Node implements Serializable {
 	/*
 	 * HashMap to store indices of each node
 	 */
 	public static HashMap<String,Integer> index = new HashMap<String, Integer>();
 	public static int i = 0;
+	static final long serialVersionUID = 1;
 	/*
 	 * Node ID
 	 */
@@ -30,7 +31,6 @@ public class Node {
 	}
 	
 	/*
-	 * 
 	 * Adds a neighbor to current node
 	 */
 	public void addNeighbor(Node a, Node b) {
@@ -44,7 +44,7 @@ public class Node {
 	public void printNeighbors(Node p) {
 		System.out.print(p.nodeID+" ");
 		for (String n: p.neighbors) {
-			System.out.print(n +" ");
+			System.out.print(n + " ");
 		}
 		System.out.println();
 	}
