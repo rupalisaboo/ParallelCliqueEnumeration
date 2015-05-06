@@ -70,24 +70,23 @@ public class cliqueEnumerate
 					MPI.COMM_WORLD.Send(temp, 0, 2, MPI.INT, i, 11);
 				}
 				
-				/*
-				ArrayList<ArrayList<Integer>> finalCliques = new ArrayList<ArrayList<Integer>>();
+				
+				ArrayList<ArrayList<Node>> finalCliques = new ArrayList<ArrayList<Node>>();
 				for (int i=1; i<numProcesses; i++) {
-					ArrayList<ArrayList<Integer>> cliqueIn_i = new ArrayList<ArrayList<Integer>>();
-					MPI.COMM_WORLD.Bcast(cliqueIn_i, 0, 1, MPI.OBJECT, i);
-					for (ArrayList<Integer> temp: cliqueIn_i) {
+					ArrayList<ArrayList<Node>> cliqueIn_i = new ArrayList<ArrayList<Node>>();
+		//			MPI.COMM_WORLD.Bcast(cliqueIn_i, 0, 1, MPI.OBJECT, i);
+					for (ArrayList<Node> temp: cliqueIn_i) {
 						finalCliques.add(temp);
 					}
 				}
 				
 				//Printing final cliques
-				for (ArrayList<Integer> temp1: finalCliques) {
-					for (Integer temp2: temp1) {
-						System.out.print(temp2);
+				for (ArrayList<Node> temp1: finalCliques) {
+					for (Node temp2: temp1) {
+						System.out.print(temp2.nodeID);
 					}
 					System.out.println();
 				}
-				*/
 				
 			} 
 			
@@ -112,116 +111,103 @@ public class cliqueEnumerate
 			int indexes[] = new int[2];
 			MPI.COMM_WORLD.Recv(indexes, 0, 2, MPI.INT, 0, 11);
 			System.out.println("Received indexes");
-			
-			final int ID_final = ID;
-			
 			//Spawning threads for each process
+			final int ID_final = ID;
 			Runnable threads = new Runnable()
 			{
-				public ArrayList<Node> cliqueEnumerate(cp_struct cp) {
-					
-					//Stack<cp_struct> cp_stack = new Stack<cp_struct>();
-					//cp_stack.push(cp);
-					
-					//while (!cp_stack.empty()) {
-						//cp_struct curr = cp;//_stack.pop();
+					public ArrayList<Node> cliqueEnumerate(cp_struct cp) {
+						System.out.println("Enumerating Input lists");
 						if (cp.cand.isEmpty() && cp.not.isEmpty()) {
-							return cp.compsub;
-						}
-						else {
-							int max = 0;
-							Node fixp = null;
-							for (Node i: cp.cand) {
-								int count = 0;
-								for (Node j: cp.cand) {
-									if (i!=j) {
-										if (i.neighbors.contains(j)) {
-											count+=1;
+								for(Node n: cp.compsub)
+								{
+									System.out.println("Clique" + n.nodeID);
+								}
+								return cp.compsub;
+							}
+							else {
+								int max = 0;
+								Node fixp = null;
+								for (Node i: cp.cand) {
+						//			System.out.println("Nodes "+i.nodeID);
+									int count = 0;
+									for (Node j: i.neighbors) {
+										if (i!=j) {
+							//				System.out.println("iner"+j.nodeID);
+
+											if (i.neighbors.contains(j)) {
+												count+=1;
+											}
 										}
 									}
-								}
-								if (count>max) {
-									fixp = i;
-									max = count;
-								}
-							}
-							
-							Node cur_v = fixp;
-							//System.out.println("cur_v "+cur_v.nodeID);
-							while (cur_v!=null) {
-								cp_struct cp_new = new cp_struct();
-								for (Node i: cp.not) {
-									if (cur_v.neighbors.contains(i)) {
-										cp_new.not.add(i);
+									if (count>max) {
+										fixp = i;
+										max = count;
 									}
 								}
+
+								System.out.println("Curr_v "+fixp.nodeID);
 								
-								for (Node i: cp.cand) {
-									if (cur_v.neighbors.contains(i)) {
-										cp_new.cand.add(i);
+								Node cur_v = fixp;
+								System.out.println("cur_v "+cur_v.nodeID);
+								while (cur_v!=null) {
+									cp_struct cp_new = new cp_struct();
+									cp_new.compsub = cp.compsub;
+									for (Node i: cp.not) {
+										if (cur_v.neighbors.contains(i)) {
+							//				System.out.println("Adding to new not"+i.nodeID);
+											cp_new.not.add(i);
+										}
 									}
+									
+									for (Node i: cur_v.neighbors) {
+										if (cp.cand.contains(i)) {
+								//			System.out.println("Adding to new cand"+i.nodeID);
+											cp_new.cand.add(i);
+										}
+									}
+									cp_new.cand.remove(cur_v);
+									cp_new.compsub.add(cur_v);
+									System.out.println("New:");
+									
+									cliqueEnumerate(cp_new);
+									
+									System.out.println("Here?");
+									cp.not.add(cur_v);
+									cp.cand.remove(cur_v);
+									
+									cur_v = null;
+									/*for (Node i: cp.cand) {
+										if (!fixp.neighbors.contains(i)) {
+											cur_v = i;
+											break;
+										}
+										
+									}*/
+									
 								}
-								
-								cp_new.compsub.add(cur_v);
-								cliqueEnumerate(cp_new);
-								cp.not.add(cur_v);
-								cp.cand.remove(cur_v);
-								for (Node i: cp.cand) {
-									if (!fixp.neighbors.contains(i)) {
-										cur_v = i;
-									}
-									else {
-										cur_v = null;
-									}
-								}
-							}
-							
-						//}
-					}
-					
-					return null;
-					
+						}
+						return null;
+						
 				}
 				
 				public void run()
 				{
-					System.out.println("Running thread");
 					String IDs = Thread.currentThread().getName();
 					int v = Integer.parseInt(IDs);
 					Node vertex = nodes[v];
-					ArrayList<ArrayList<Node>> cliques = new ArrayList<ArrayList<Node>>();
+					cp_struct input = new cp_struct();
+					//if (Integer.parseInt(nodes[2].nodeID) < Integer.parseInt(nodes[2].neighbors.get(i).nodeID))
+					input.cand.addAll(nodes[v].neighbors);
+					//else 
+					//input.not.add(nodes[2].neighbors.get(i));			
 					
-					cp_struct cp = new cp_struct();
-					//Stack<cp_struct> cp_stack = new Stack<cp_struct>();
-					
-					int ID = Integer.parseInt(vertex.nodeID);
-					for (Node n: vertex.neighbors) {
-						if (ID < Integer.parseInt(n.nodeID)) {
-							cp.cand.add(n);
-						}
-						else {
-							cp.not.add(n);
-						}
-						//cp_stack.push(cp);
-					}
-					
-					ArrayList<Node> temp = cliqueEnumerate(cp);
-					if (temp!=null) {
-						cliques.add(temp);
-					}
-					
-					//System.out.println("Clique size: "+cliques.size());
-					for (ArrayList<Node> temp1: cliques) {
-						for (Node temp2: temp1) {
-							System.out.print(temp2.nodeID);
-						}
-						System.out.println();
-					}
+
+					ArrayList<Node> cliques = new ArrayList<Node>();
+					cliques = cliqueEnumerate(input);
 					//MPI.COMM_WORLD.Send(cliques, 0, 1, MPI.OBJECT, ID_final, Integer.parseInt(IDs));
 				}
 			};
 			Thread[] thread = new Thread[indexes[1] - indexes[0]];
-			System.out.println("Num threads "+(indexes[1] - indexes[0]));
 			for (int i=1; i<thread.length; i++) {
 		    	thread[i] = new Thread(threads);
 		    	thread[i].setName(i+"");
@@ -231,29 +217,22 @@ public class cliqueEnumerate
 		    thread[0] = new Thread(threads);
 		    thread[0].setName(0+"");
 		    thread[0].start();
-		    /*
-		    ArrayList<ArrayList<Node>> maximalCliques = new ArrayList<ArrayList<Node>>(); 
+		    
+		    ArrayList<ArrayList<Integer>> maximalCliques = new ArrayList<ArrayList<Integer>>(); 
 		    for (int i=0; i<thread.length; i++) {
-		    	ArrayList<ArrayList<Node>> cliques = new ArrayList<ArrayList<Node>>();
-		    	MPI.COMM_WORLD.Recv(cliques, 0, 1, MPI.OBJECT, ID_final, i);
-		    	for (ArrayList<Node> temp : cliques) {
+		    	ArrayList<ArrayList<Integer>> cliques = new ArrayList<ArrayList<Integer>>();
+	//	    	MPI.COMM_WORLD.Recv(cliques, 0, 1, MPI.OBJECT, ID_final, i);
+		    	for (ArrayList<Integer> temp : cliques) {
 		    		maximalCliques.add(temp);
 		    		
 		    	}
 		    }
-		    */
+		    
 		    for(int i=0; i<thread.length; i++) {
 		    	thread[i].join();
 		    }
-		    /*
-		    for (ArrayList<Node> temp1: maximalCliques) {
-				for (Node temp2: temp1) {
-					System.out.print(temp2.nodeID);
-				}
-				System.out.println();
-			}
-		    */
-		    //MPI.COMM_WORLD.Bcast(maximalCliques, 0, 1, MPI.OBJECT, ID);
+		    
+//		    MPI.COMM_WORLD.Bcast(maximalCliques, 0, 1, MPI.OBJECT, ID);
 		    
 		}
 	    MPI.Finalize();
