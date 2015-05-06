@@ -17,7 +17,7 @@ public class Node implements Serializable {
 	/*
 	 * List of neighbors
 	 */
-	public ArrayList<String> neighbors;
+	public ArrayList<Node> neighbors;
 	
 	/*
 	 * Constructor
@@ -25,7 +25,7 @@ public class Node implements Serializable {
 	 */
 	public Node(String name) {
 		this.nodeID = name;
-		this.neighbors = new ArrayList<>();
+		this.neighbors = new ArrayList<Node>();
 		index.put(name, i);
 		i += 1;
 	}
@@ -34,8 +34,8 @@ public class Node implements Serializable {
 	 * Adds a neighbor to current node
 	 */
 	public void addNeighbor(Node a, Node b) {
-		a.neighbors.add(b.nodeID);
-		b.neighbors.add(a.nodeID);
+		a.neighbors.add(b);
+		b.neighbors.add(a);
 	}
 	
 	/*
@@ -43,8 +43,8 @@ public class Node implements Serializable {
 	 */
 	public void printNeighbors(Node p) {
 		System.out.print(p.nodeID+" ");
-		for (String n: p.neighbors) {
-			System.out.print(n + " ");
+		for (Node n: p.neighbors) {
+			System.out.print(n.nodeID + " ");
 		}
 		System.out.println();
 	}
