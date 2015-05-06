@@ -26,6 +26,7 @@ public class Node implements Serializable {
 	public Node(String name) {
 		this.nodeID = name;
 		this.neighbors = new ArrayList<Node>();
+		neighbors.add(this);
 		index.put(name, i);
 		i += 1;
 	}
