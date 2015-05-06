@@ -200,7 +200,7 @@ public class cliqueEnumerate
 			
 			ArrayList<Node> temp = new ArrayList<Node>();
 			temp = cliqueEnumerate(cp);
-			
+			/*
 			String cliques = "";
 			if (temp!=null) {
 				for (Node i: temp) {
@@ -208,13 +208,12 @@ public class cliqueEnumerate
 				}
 				cliques += "\n";
 				
-			}
-			
-			//System.out.println("Printing cliques ");
-			//System.out.println(cliques);
-			int cliqueLength[] = {cliques.length()};
+			}*/
+			int cliqueLength[] = {temp.size()};
+			Node[] clique_nodes = new Node[cliqueLength[0]]; 
+			temp.toArray(clique_nodes);
 			MPI.COMM_WORLD.Send(cliqueLength, 0, 1, MPI.INT, ID_final, v);
-			MPI.COMM_WORLD.Send(cliques, 0, cliqueLength[0], MPI.CHAR, ID_final, v);
+			MPI.COMM_WORLD.Send(clique_nodes, 0, cliqueLength[0], MPI.OBJECT, ID_final, v);
 			}
 		};
 			Thread[] thread = new Thread[indexes[1] - indexes[0]];
@@ -228,18 +227,21 @@ public class cliqueEnumerate
 		    thread[0] = new Thread(threads);
 		    thread[0].setName(0+"");
 		    thread[0].start();
-		    
-		    String collectCliques = ""; 
+		    ArrayList<Node> collected_cliques = new ArrayList<Node>();
 		    for (int i=0; i<thread.length; i++) {
-		    	String cliques = "";
+		    	//String cliques = "";
 		    	int cliquesLength[] = new int[1];
-		    	MPI.COMM_WORLD.Send(cliquesLength, 0, 1, MPI.INT, ID_final, i);
+		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, i);
 		    	System.out.println("Clique length: "+cliquesLength[0]);
-		    	MPI.COMM_WORLD.Send(cliques, 0, cliquesLength[0], MPI.CHAR, ID_final, i);
-				collectCliques += cliques;
+		    	Node cliques[] = new Node[cliquesLength[0]];
+		    	MPI.COMM_WORLD.Recv(cliques, 0, cliquesLength[0], MPI.OBJECT, ID_final, i);
+				for(Node n: cliques)
+				{
+					collected_cliques.add(n);
+				}
 		    }
 		    
-		    System.out.println("Collect cliques: "+collectCliques);
+		    System.out.println("Collect cliques: "+collected_cliques.get(0).nodeID);
 		    
 		    for(int i=0; i<thread.length; i++) {
 		    	thread[i].join();
