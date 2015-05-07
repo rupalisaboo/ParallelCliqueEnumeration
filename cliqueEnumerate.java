@@ -58,6 +58,7 @@ public class cliqueEnumerate
 					}
 				}
 				bufferedReader.close();
+				long start_time = System.currentTimeMillis();
 				int arr[] = {size};
 				MPI.COMM_WORLD.Bcast(arr, 0, 1, MPI.INT, 0);
 				MPI.COMM_WORLD.Bcast(nodes, 0, size, MPI.OBJECT, 0);
@@ -87,8 +88,9 @@ public class cliqueEnumerate
 				    String cliquesFromP = new String(collectCliquesBytes);
 			    	finalCliques += cliquesFromP;
 				}
-				
+				long end_time = System.currentTimeMillis();
 				//Printing final cliques
+				System.out.println("Running on "+numProcesses+" number of processes");
 				System.out.println("Printing final cliques:");
 				String cliqueArray[] = finalCliques.split("\\n");
 				HashSet<String> cliqueSet = new HashSet<String>();
@@ -99,7 +101,7 @@ public class cliqueEnumerate
 			    for(String c: cliqueSet) {
 			    	System.out.println(c);
 			    }
-				
+				System.out.println("Time taken for processing: "+(end_time-start_time)+"ms");
 			} 
 			
 			catch (IOException e) 
@@ -118,6 +120,7 @@ public class cliqueEnumerate
 			Node nodes_msg[] = new Node[arr[0]];
 			MPI.COMM_WORLD.Bcast(nodes_msg, 0, arr[0], MPI.OBJECT, 0);
 			final Node nodes[] = nodes_msg; 
+			
 			//System.out.println("Received neighbors");
 			//Receiving indexes of nodes to work on
 			int indexes[] = new int[2];
@@ -224,7 +227,6 @@ public class cliqueEnumerate
 				
 				cliques += "\n";
 			}
-			
 			byte[] cliquesBytes = cliques.getBytes();
 			
 			int cliqueLength[] = {cliquesBytes.length};
@@ -234,7 +236,6 @@ public class cliqueEnumerate
 			}
 		};
 			Thread[] thread = new Thread[indexes[1] - indexes[0]];
-			//System.out.println("Num threads "+(indexes[1] - indexes[0]));
 			for (int i=1; i<thread.length; i++) {
 				if ((i+indexes[0])<arr[0]) {
 					thread[i] = new Thread(threads);
@@ -252,8 +253,7 @@ public class cliqueEnumerate
 		    String collectCliques = "";
 		    for (int i=0; i<thread.length; i++) {
 		    	int cliquesLength[] = new int[1];
-		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, (i+indexes[0]));
-		    	
+		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, (i+indexes[0]));		    
 		    	byte byteCliques[] = new byte[cliquesLength[0]];
 		    	MPI.COMM_WORLD.Recv(byteCliques, 0, cliquesLength[0], MPI.BYTE, ID_final, (i+indexes[0]));
 		    	String cliques = new String(byteCliques);
@@ -267,11 +267,8 @@ public class cliqueEnumerate
 		    byte[] collectCliquesBytes = collectCliques.getBytes();
 		    int lenCollectCliques[] = {collectCliquesBytes.length};
 		    MPI.COMM_WORLD.Send(lenCollectCliques, 0, 1, MPI.INT, 0, 100);
-		    MPI.COMM_WORLD.Send(collectCliquesBytes, 0, lenCollectCliques[0], MPI.BYTE, 0, 200);
-		    
-		    
-		    
-		   
+		    MPI.COMM_WORLD.Send(collectCliquesBytes, 0, lenCollectCliques[0], MPI.BYTE, 0, 200);   
+		    		   
 		}
 	    MPI.Finalize();
 		
