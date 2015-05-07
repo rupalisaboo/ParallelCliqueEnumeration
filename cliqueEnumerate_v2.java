@@ -90,7 +90,6 @@ public class cliqueEnumerate_v2
 				}
 				long end_time = System.currentTimeMillis();
 				//Printing final cliques
-				System.out.println("Running on "+numProcesses+" number of processes and "+noThreads[0]+" number of threads\n");
 				System.out.println("Printing final cliques:");
 				String cliqueArray[] = finalCliques.split("\\n");
 				for(String c: cliqueArray) {
@@ -98,7 +97,7 @@ public class cliqueEnumerate_v2
 			    }
 				System.out.println(cliqueSet.size() + " cliques found.");
 				
-			    for(String c: cliqueSet) {
+			     for(String c: cliqueSet) {
 			    	System.out.println(c);
 			    }
 				System.out.println("Time taken for processing: "+(end_time-start_time)+"ms");
@@ -126,16 +125,10 @@ public class cliqueEnumerate_v2
 			//Receiving indexes of nodes to work on
 			int indexes[] = new int[2];
 			MPI.COMM_WORLD.Recv(indexes, 0, 2, MPI.INT, 0, 11);
-			//System.out.println("Start "+indexes[0]+" End "+indexes[1]);
-			//System.out.println("Received indexes");
 			int numNodes = indexes[1] - indexes[0];
-			System.out.println("numNodes: "+numNodes);
 			final int ID_final = ID;
 			int workThread = numNodes/noThreads[0];
 			int leftThread = numNodes%noThreads[0];
-			System.out.println("Work: "+workThread+" left "+leftThread+" for "+ID);
-			System.out.println("Start Index: "+ indexes[0]);
-			
 			//Spawning threads for each process
 			Runnable threads = new Runnable()
 			{	
@@ -209,7 +202,6 @@ public class cliqueEnumerate_v2
 		{
 			String IDs = Thread.currentThread().getName();
 			int v = Integer.parseInt(IDs);
-			System.out.println("ID" + IDs);
 			Node vertex = nodes[v];
 			int no_vertices = 0;
 			if (v == indexes[0])
@@ -220,13 +212,13 @@ public class cliqueEnumerate_v2
 			{
 				no_vertices = workThread;
 			}
-			System.out.println(no_vertices + " " + IDs);
 			Node vertex1[] = new Node[no_vertices];
-			//byte[] cliquesBytes = ;
-			String output = "";
+			String allCliques = "";
 			for (int let = 0;let<no_vertices;let++)
 			{
-			vertex1[let] = nodes[let+indexes[0]];
+				int minus = v - indexes[0];
+			    int n=v+minus+let;
+			vertex1[let] = nodes[n];
 			cp_struct cp = new cp_struct();
 			cp.cand.addAll(vertex1[let].neighbors);
 			
@@ -250,10 +242,9 @@ public class cliqueEnumerate_v2
 				
 				cliques += "\n";
 			}
-			output += cliques;
+			allCliques += cliques;
 			}
-			System.out.println(output);
-			byte[] cliquesBytes = output.getBytes();			
+			byte[] cliquesBytes = allCliques.getBytes();			
 			int cliqueLength[] = {cliquesBytes.length};
 			
 			MPI.COMM_WORLD.Send(cliqueLength, 0, 1, MPI.INT, ID_final, v);
