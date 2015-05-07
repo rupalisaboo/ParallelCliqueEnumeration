@@ -1,10 +1,10 @@
 package cliqueTreeEnumeration;
 import mpi.*;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.HashSet;
+import java.util.Arrays;
 
 public class cliqueEnumerate 
 {	
@@ -90,8 +90,15 @@ public class cliqueEnumerate
 				
 				//Printing final cliques
 				System.out.println("Printing final cliques:");
-				System.out.println(finalCliques);
-				
+				String cliqueArray[] = finalCliques.split("\\n");
+				HashSet<String> cliqueSet = new HashSet<String>();
+			    for(String c: cliqueArray) {
+			    	cliqueSet.add(c.trim());
+			    }
+			    
+			    for(String c: cliqueSet) {
+			    	System.out.println(c);
+			    }
 				
 			} 
 			
@@ -115,7 +122,7 @@ public class cliqueEnumerate
 			//Receiving indexes of nodes to work on
 			int indexes[] = new int[2];
 			MPI.COMM_WORLD.Recv(indexes, 0, 2, MPI.INT, 0, 11);
-			System.out.println("Start "+indexes[0]+" End "+indexes[1]);
+			//System.out.println("Start "+indexes[0]+" End "+indexes[1]);
 			//System.out.println("Received indexes");
 			
 			final int ID_final = ID;
@@ -202,9 +209,19 @@ public class cliqueEnumerate
 			
 			String cliques = "";
 			if (temp!=null) {
+				Integer cliqueID[] = new Integer[temp.size()];
+				int j=0;
 				for (Node i: temp) {
-					cliques += (i.nodeID) +" ";
+					cliqueID[j] = Integer.parseInt(i.nodeID);
+					j+=1;
 				}
+				Arrays.sort(cliqueID);
+				
+				
+				for (int i: cliqueID) {
+					cliques += (i +" ");
+				}
+				
 				cliques += "\n";
 			}
 			
@@ -251,11 +268,8 @@ public class cliqueEnumerate
 		    int lenCollectCliques[] = {collectCliquesBytes.length};
 		    MPI.COMM_WORLD.Send(lenCollectCliques, 0, 1, MPI.INT, 0, 100);
 		    MPI.COMM_WORLD.Send(collectCliquesBytes, 0, lenCollectCliques[0], MPI.BYTE, 0, 200);
-		    String cliqueArray[] = collectCliques.split("\\n");
-		    HashSet<String> cliqueSet = new HashSet<String>();
-		    for(String a: cliqueArray) {
-		    	cliqueSet.add(a);
-		    }
+		    
+		    
 		    
 		   
 		}
