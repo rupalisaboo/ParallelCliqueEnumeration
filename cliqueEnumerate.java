@@ -115,6 +115,7 @@ public class cliqueEnumerate
 			//Receiving indexes of nodes to work on
 			int indexes[] = new int[2];
 			MPI.COMM_WORLD.Recv(indexes, 0, 2, MPI.INT, 0, 11);
+			System.out.println("Start "+indexes[0]+" End "+indexes[1]);
 			//System.out.println("Received indexes");
 			
 			final int ID_final = ID;
@@ -218,22 +219,26 @@ public class cliqueEnumerate
 			Thread[] thread = new Thread[indexes[1] - indexes[0]];
 			//System.out.println("Num threads "+(indexes[1] - indexes[0]));
 			for (int i=1; i<thread.length; i++) {
-		    	thread[i] = new Thread(threads);
-		    	thread[i].setName(i+"");
-		    	thread[i].start();
+				if ((i+indexes[0])<arr[0]) {
+					thread[i] = new Thread(threads);
+			    	thread[i].setName((i+indexes[0])+"");
+			    	thread[i].start();
+				}
+		    	
 		    }
+			if (indexes[0]<arr[0]) {
+			    thread[0] = new Thread(threads);
+			    thread[0].setName((0+indexes[0])+"");
+			    thread[0].start();
+			}
 			
-		    thread[0] = new Thread(threads);
-		    thread[0].setName(0+"");
-		    thread[0].start();
-		    
 		    String collectCliques = "";
 		    for (int i=0; i<thread.length; i++) {
 		    	int cliquesLength[] = new int[1];
-		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, i);
+		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, (i+indexes[0]));
 		    	
 		    	byte byteCliques[] = new byte[cliquesLength[0]];
-		    	MPI.COMM_WORLD.Recv(byteCliques, 0, cliquesLength[0], MPI.BYTE, ID_final, i);
+		    	MPI.COMM_WORLD.Recv(byteCliques, 0, cliquesLength[0], MPI.BYTE, ID_final, (i+indexes[0]));
 		    	String cliques = new String(byteCliques);
 		    	collectCliques += cliques;
 			}
