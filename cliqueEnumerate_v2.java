@@ -6,7 +6,7 @@ import java.util.Stack;
 import java.util.HashSet;
 import java.util.Arrays;
 
-public class cliqueEnumerate 
+public class cliqueEnumerate_v2
 {	
 	public static void main(String args[]) throws InterruptedException
 	{
