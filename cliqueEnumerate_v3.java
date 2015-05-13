@@ -213,7 +213,6 @@ public class cliqueEnumerate_v3
 		{
 			String IDs = Thread.currentThread().getName();
 			int v = Integer.parseInt(IDs);
-			Node vertex = nodes[v];
 			int no_vertices = 0;
 			if (v == indexes[0])
 			{
@@ -223,18 +222,13 @@ public class cliqueEnumerate_v3
 			{
 				no_vertices = workThread;
 			}
-			Node vertex1[] = new Node[no_vertices];
+			Node vertex[] = new Node[no_vertices];
 			String allCliques = "";
-		//	System.out.println(no_vertices + " "+IDs);
-			int start  = v; 
-			int end = v+no_vertices-1;
-	//		System.out.println("start" + start +"end "+end+" "+nodes.length+" "+(end-start));
-	//		System.out.println(v+" "+start);
 			for (int let = 0;let<no_vertices;let++)
 			{
-			vertex1[let] = nodes[let+start];
+			vertex[let] = nodes[let+v];
 			cp_struct cp = new cp_struct();
-			cp.cand.addAll(vertex1[let].neighbors);
+			cp.cand.addAll(vertex[let].neighbors);
 			
 			ArrayList<Node> temp = new ArrayList<Node>();
 			temp = cliqueEnumerate(cp);
@@ -247,9 +241,7 @@ public class cliqueEnumerate_v3
 					cliqueID[j] = Integer.parseInt(i.nodeID);
 					j+=1;
 				}
-				Arrays.sort(cliqueID);
-				
-				
+				Arrays.sort(cliqueID);			
 				for (int i: cliqueID) {
 					cliques += (i +" ");
 				}
