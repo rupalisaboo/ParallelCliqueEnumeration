@@ -1,4 +1,3 @@
-/***********************************************************
 Data:
 We generated data either by having arbitrary edges between vertices, or by having fixed number of
 neighbors for every vertex in the graph.
@@ -17,4 +16,4 @@ or size of cliques, use these:
 random_<number_of_vertices>.txt
 
 Example: random_1000.txt consists of a graph with 1000 vertices.
-************************************************************/
+
