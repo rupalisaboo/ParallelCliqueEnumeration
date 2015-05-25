@@ -1,12 +1,11 @@
-package cliqueTreeEnumeration;
 import mpi.*;
+
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Stack;
 import java.util.HashSet;
 import java.util.Arrays;
 
-public class cliqueEnumerate 
+public class cliqueEnumerate
 {	
 	public static void main(String args[]) throws InterruptedException
 	{
@@ -18,8 +17,8 @@ public class cliqueEnumerate
 		if(ID==master)
 		{
 			String file_name = args[3];
-			HashSet<String> cliques = new HashSet<String>();
-			
+			HashSet<String> cliqueSet = new HashSet<String>();
+		    int noThreads[] = {Integer.parseInt(args[4])};
 			try {
 				File file = new File(file_name);
 				FileReader fileReader = new FileReader(file);
@@ -62,7 +61,7 @@ public class cliqueEnumerate
 				int arr[] = {size};
 				MPI.COMM_WORLD.Bcast(arr, 0, 1, MPI.INT, 0);
 				MPI.COMM_WORLD.Bcast(nodes, 0, size, MPI.OBJECT, 0);
-				
+				MPI.COMM_WORLD.Bcast(noThreads, 0,1, MPI.INT, 0);
 				int nodesPerProcess = size / (numProcesses - 1);
 				int excessNodes = size % (numProcesses -1);
 				int start = 0, end = nodesPerProcess + excessNodes;
@@ -90,18 +89,18 @@ public class cliqueEnumerate
 				}
 				long end_time = System.currentTimeMillis();
 				//Printing final cliques
-				System.out.println("Running on "+numProcesses+" number of processes");
 				System.out.println("Printing final cliques:");
 				String cliqueArray[] = finalCliques.split("\\n");
-				HashSet<String> cliqueSet = new HashSet<String>();
-			    for(String c: cliqueArray) {
+				for(String c: cliqueArray) {
 			    	cliqueSet.add(c.trim());
 			    }
-			    
-			    for(String c: cliqueSet) {
+				System.out.println(cliqueSet.size() + " cliques found.");
+				
+			     for(String c: cliqueSet) {
 			    	System.out.println(c);
 			    }
-				System.out.println("Time taken for processing: "+(end_time-start_time)+"ms");
+			
+					System.out.println("Time taken for processing: "+(end_time-start_time)+"ms");
 			} 
 			
 			catch (IOException e) 
@@ -120,16 +119,25 @@ public class cliqueEnumerate
 			Node nodes_msg[] = new Node[arr[0]];
 			MPI.COMM_WORLD.Bcast(nodes_msg, 0, arr[0], MPI.OBJECT, 0);
 			final Node nodes[] = nodes_msg; 
-			
+			int noThreads[] = new int[1];
+			MPI.COMM_WORLD.Bcast(noThreads, 0,1, MPI.INT, 0);
 			//System.out.println("Received neighbors");
 			//Receiving indexes of nodes to work on
-			int indexes[] = new int[2];
+			final int indexes[] = new int[2];
 			MPI.COMM_WORLD.Recv(indexes, 0, 2, MPI.INT, 0, 11);
-			//System.out.println("Start "+indexes[0]+" End "+indexes[1]);
-			//System.out.println("Received indexes");
-			
+			int numNodes = indexes[1] - indexes[0];
 			final int ID_final = ID;
-			
+			Thread[] thread = null;
+			if(noThreads[0]<=numNodes)
+			{
+				thread = new Thread[noThreads[0]];
+			}
+			else
+			{
+				thread = new Thread[numNodes];
+			}
+			final int workThread = numNodes/(thread.length);
+			final int leftThread = numNodes%(thread.length);
 			//Spawning threads for each process
 			Runnable threads = new Runnable()
 			{	
@@ -174,6 +182,7 @@ public class cliqueEnumerate
 
 					Node cur_v = fixp;
 					while (cur_v!=null) {
+						
 						cp_struct cp_new = new cp_struct();
 						cp_new.compsub = cp.compsub;
 						for (Node i: cp.not) {
@@ -202,10 +211,22 @@ public class cliqueEnumerate
 		{
 			String IDs = Thread.currentThread().getName();
 			int v = Integer.parseInt(IDs);
-			Node vertex = nodes[v];
-			
+			int no_vertices = 0;
+			if (v == indexes[0])
+			{
+				no_vertices = workThread + leftThread;
+			}
+			else
+			{
+				no_vertices = workThread;
+			}
+			Node vertex[] = new Node[no_vertices];
+			String allCliques = "";
+			for (int let = 0;let<no_vertices;let++)
+			{
+			vertex[let] = nodes[let+v];
 			cp_struct cp = new cp_struct();
-			cp.cand.addAll(vertex.neighbors);
+			cp.cand.addAll(vertex[let].neighbors);
 			
 			ArrayList<Node> temp = new ArrayList<Node>();
 			temp = cliqueEnumerate(cp);
@@ -218,52 +239,56 @@ public class cliqueEnumerate
 					cliqueID[j] = Integer.parseInt(i.nodeID);
 					j+=1;
 				}
-				Arrays.sort(cliqueID);
-				
-				
+				Arrays.sort(cliqueID);			
 				for (int i: cliqueID) {
 					cliques += (i +" ");
 				}
 				
 				cliques += "\n";
 			}
-			byte[] cliquesBytes = cliques.getBytes();
-			
+			allCliques += cliques;
+			}
+			byte[] cliquesBytes = allCliques.getBytes();			
 			int cliqueLength[] = {cliquesBytes.length};
 			
 			MPI.COMM_WORLD.Send(cliqueLength, 0, 1, MPI.INT, ID_final, v);
 			MPI.COMM_WORLD.Send(cliquesBytes, 0, cliqueLength[0], MPI.BYTE, ID_final, v);
 			}
-		};
-			Thread[] thread = new Thread[indexes[1] - indexes[0]];
+		}; 
+			
 			for (int i=1; i<thread.length; i++) {
+				int index = indexes[0]+(i*workThread)+leftThread;
 				if ((i+indexes[0])<arr[0]) {
 					thread[i] = new Thread(threads);
-			    	thread[i].setName((i+indexes[0])+"");
+			    	thread[i].setName(index+"");
 			    	thread[i].start();
 				}
 		    	
 		    }
 			if (indexes[0]<arr[0]) {
 			    thread[0] = new Thread(threads);
-			    thread[0].setName((0+indexes[0])+"");
+			    thread[0
+			           ].setName((0+indexes[0])+"");
 			    thread[0].start();
 			}
 			
 		    String collectCliques = "";
 		    for (int i=0; i<thread.length; i++) {
+		    	int index = indexes[0]+(i*workThread)+leftThread;
+		    	if(i==0)
+		    	{
+		    		index = 0+indexes[0];
+		    	}
 		    	int cliquesLength[] = new int[1];
-		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, (i+indexes[0]));		    
+		    	MPI.COMM_WORLD.Recv(cliquesLength, 0, 1, MPI.INT, ID_final, index);		    
 		    	byte byteCliques[] = new byte[cliquesLength[0]];
-		    	MPI.COMM_WORLD.Recv(byteCliques, 0, cliquesLength[0], MPI.BYTE, ID_final, (i+indexes[0]));
+		    	MPI.COMM_WORLD.Recv(byteCliques, 0, cliquesLength[0], MPI.BYTE, ID_final, index);
 		    	String cliques = new String(byteCliques);
 		    	collectCliques += cliques;
 			}
-		    
 		    for(int i=0; i<thread.length; i++) {
 		    	thread[i].join();
 		    }
-		    
 		    byte[] collectCliquesBytes = collectCliques.getBytes();
 		    int lenCollectCliques[] = {collectCliquesBytes.length};
 		    MPI.COMM_WORLD.Send(lenCollectCliques, 0, 1, MPI.INT, 0, 100);
